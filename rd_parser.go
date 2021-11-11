@@ -1,10 +1,12 @@
 package simplepeg
 
 import (
+	"regexp"
 	"strings"
 )
 
 type Expectation struct {
+	typeData string `type`
 	position int
 	rule     string
 }
@@ -15,7 +17,17 @@ type State struct {
 	position         int
 }
 
-func GetLastError(state State) interface{} {
+type Ast struct {
+	typeData       string `type`
+	match          string
+	children       []Ast
+	start_position int
+	end_position   int
+}
+
+type ParserFunc = func(state *State) (Ast, bool)
+
+func GetLastError(state *State) interface{} {
 	if len(state.lastExpectations) < 1 {
 		return false
 	}
@@ -99,6 +111,100 @@ func GetLastError(state State) interface{} {
 	var extra = line_of_error + "\n" + pointer
 	return unexpected + expected + "\n" + str_error_ln + ": " + extra
 
+}
+
+func String(rule string) ParserFunc {
+	return func(state *State) (Ast, bool) {
+
+		if state.text[state.position:state.position+len(rule)] == rule {
+			start := state.position
+			state.position += len(rule)
+			end := state.position
+
+			return Ast{
+				typeData:       "string",
+				match:          rule,
+				start_position: start,
+				end_position:   end,
+			}, false
+		}
+
+		state.lastExpectations = []Expectation{
+			Expectation{
+				typeData: "string",
+				rule:     rule,
+				position: state.position,
+			}}
+		return Ast{}, true // return err
+	}
+}
+
+func RegexChar(rule string) ParserFunc {
+	return func(state *State) (Ast, bool) {
+		text := state.text[state.position:]
+		isMatch, _ := regexp.MatchString(rule, text)
+
+		if isMatch {
+			r, _ := regexp.Compile(rule)
+			match := r.FindString(text)
+
+			start := state.position
+			state.position += len(rule)
+			end := state.position
+
+			return Ast{
+				typeData:       "regex_char",
+				match:          match,
+				start_position: start,
+				end_position:   end,
+			}, false
+		}
+
+		state.lastExpectations = []Expectation{
+			Expectation{
+				typeData: "regex_char",
+				rule:     rule,
+				position: state.position,
+			}}
+
+		return Ast{}, true // return err
+	}
+}
+
+func Sequence(parsers []ParserFunc) ParserFunc {
+	return func(state *State) (Ast, bool) {
+		var asts []Ast // Ast
+		var expectations []Expectation
+		var startPosition = state.position
+
+		for i := 0; i < len(parsers); i++ {
+			var ast, err = parsers[i](state)
+			expectations = append(expectations, state.lastExpectations...)
+
+			if !err {
+				asts = append(asts, ast)
+			} else {
+				state.lastExpectations = expectations
+				return Ast{}, true
+			}
+		}
+		state.lastExpectations = expectations
+
+		var match = ""
+
+		for i := 0; i < len(asts); i++ {
+			match += asts[i].match
+		}
+
+		return Ast{
+			typeData:       "sequence",
+			match:          match,
+			children:       asts,
+			start_position: startPosition,
+			end_position:   state.position,
+		}, false
+
+	}
 }
 
 func max(a, b int) int {
