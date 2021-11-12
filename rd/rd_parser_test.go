@@ -1,4 +1,4 @@
-package simplepeg
+package rd
 
 import (
 	"reflect"
