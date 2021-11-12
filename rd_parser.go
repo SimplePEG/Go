@@ -8,13 +8,20 @@ import (
 type Expectation struct {
 	typeData string `type`
 	position int
+	children []Ast
 	rule     string
+}
+
+type Rule struct {
+	name   string
+	parser ParserFunc
 }
 
 type State struct {
 	lastExpectations []Expectation
 	text             string
 	position         int
+	rules            []Rule
 }
 
 type Ast struct {
@@ -23,6 +30,7 @@ type Ast struct {
 	children       []Ast
 	start_position int
 	end_position   int
+	action         string
 }
 
 type ParserFunc = func(state *State) (Ast, bool)
@@ -113,6 +121,13 @@ func GetLastError(state *State) interface{} {
 
 }
 
+func max(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
+}
+
 func String(rule string) ParserFunc {
 	return func(state *State) (Ast, bool) {
 
@@ -149,7 +164,7 @@ func RegexChar(rule string) ParserFunc {
 			match := r.FindString(text)
 
 			start := state.position
-			state.position += len(rule)
+			state.position += len(match)
 			end := state.position
 
 			return Ast{
@@ -207,9 +222,246 @@ func Sequence(parsers []ParserFunc) ParserFunc {
 	}
 }
 
-func max(a, b int) int {
-	if a < b {
-		return b
+func OrderedChoice(parsers []ParserFunc) ParserFunc {
+	return func(state *State) (Ast, bool) {
+		var expectations []Expectation
+		var initialState = State{
+			text:     state.text,
+			position: state.position,
+		}
+
+		for i := 0; i < len(parsers); i++ {
+			var ast, err = parsers[i](state)
+
+			if !err {
+				return Ast{
+					typeData:       "ordered_choice",
+					match:          ast.match,
+					children:       []Ast{ast},
+					start_position: initialState.position,
+					end_position:   state.position,
+				}, false
+			}
+			state.text = initialState.text
+			state.position = initialState.position
+			expectations = append(expectations, state.lastExpectations...)
+		}
+
+		state.lastExpectations = expectations
+		return Ast{}, true
 	}
-	return a
+}
+
+func ZeroOrMore(parser ParserFunc) ParserFunc {
+	return func(state *State) (Ast, bool) {
+		var hasAst = true
+		var asts = []Ast{}
+		var start_position = state.position
+
+		for hasAst {
+			var state_position = state.position
+			ast, err := parser(state)
+			hasAst = !err
+
+			if !err {
+				asts = append(asts, ast)
+			} else {
+				state.position = state_position
+			}
+		}
+
+		var match string
+
+		for i := 0; i < len(asts); i++ {
+			match += asts[i].match
+		}
+
+		return Ast{
+			typeData:       "zero_or_more",
+			match:          match,
+			children:       asts,
+			start_position: start_position,
+			end_position:   state.position,
+		}, false
+	}
+}
+
+func OneOrMore(parser ParserFunc) ParserFunc {
+	return func(state *State) (Ast, bool) {
+		var hasAst = true
+		var asts = []Ast{}
+		var start_position = state.position
+
+		for hasAst {
+			var state_position = state.position
+			ast, err := parser(state)
+			hasAst = !err
+
+			if !err {
+				asts = append(asts, ast)
+			} else {
+				state.position = state_position
+			}
+		}
+
+		if len(asts) > 0 {
+
+			var match string
+
+			for i := 0; i < len(asts); i++ {
+				match += asts[i].match
+			}
+
+			return Ast{
+				typeData:       "one_or_more",
+				match:          match,
+				children:       asts,
+				start_position: start_position,
+				end_position:   state.position,
+			}, false
+		}
+
+		return Ast{}, false
+	}
+}
+
+func Optional(parser ParserFunc) ParserFunc {
+	return func(state *State) (Ast, bool) {
+		var start_position = state.position
+		var ast, err = parser(state)
+		var asts = []Ast{}
+
+		if !err {
+			asts = append(asts, ast)
+		} else {
+			state.position = start_position
+		}
+
+		var match string
+
+		for i := 0; i < len(asts); i++ {
+			match += asts[i].match
+		}
+
+		return Ast{
+			typeData:       "optional",
+			match:          match,
+			children:       asts,
+			start_position: start_position,
+			end_position:   state.position,
+		}, false
+	}
+}
+
+func AndPredicate(parser ParserFunc) ParserFunc {
+	return func(state *State) (Ast, bool) {
+		var currentState = State{
+			text:     state.text,
+			position: state.position,
+		}
+
+		ast, err := parser(state)
+
+		if !err {
+			state.text = currentState.text
+			state.position = currentState.position
+
+			return Ast{
+				typeData:       "and_predicate",
+				children:       []Ast{ast},
+				start_position: state.position,
+				end_position:   state.position,
+			}, false
+		}
+
+		return Ast{}, true
+	}
+}
+
+func NotPredicate(parser ParserFunc) ParserFunc {
+	return func(state *State) (Ast, bool) {
+		var currentState = State{
+			text:     state.text,
+			position: state.position,
+		}
+
+		ast, err := parser(state)
+
+		if !err {
+			state.text = currentState.text
+			state.position = currentState.position
+			state.lastExpectations = []Expectation{
+				Expectation{
+					typeData: "not_predicate",
+					children: []Ast{ast},
+					position: state.position,
+				}}
+
+			return Ast{}, true
+		}
+
+		state.lastExpectations = []Expectation{}
+
+		return Ast{
+			typeData:       "not_predicate",
+			children:       []Ast{},
+			start_position: state.position,
+			end_position:   state.position,
+		}, true
+	}
+}
+
+func EndOfFile() ParserFunc {
+	return func(state *State) (Ast, bool) {
+		if len(state.text) == state.position {
+			state.lastExpectations = []Expectation{}
+			return Ast{
+				typeData:       "end_of_file",
+				children:       []Ast{},
+				start_position: state.position,
+				end_position:   state.position,
+			}, false
+		}
+		state.lastExpectations = []Expectation{
+			Expectation{
+				typeData: "end_of_file",
+				rule:     "EOF",
+				position: state.position,
+			},
+		}
+
+		return Ast{}, false
+	}
+}
+
+func Rec(f func() ParserFunc) ParserFunc {
+	return func(state *State) (Ast, bool) {
+		var ast, err = f()(state)
+		return ast, err
+	}
+}
+
+func Action(name string, parser ParserFunc) ParserFunc {
+	return func(state *State) (Ast, bool) {
+		ast, err := parser(state)
+
+		if !err {
+			ast.action = name
+		}
+
+		return ast, false
+	}
+}
+
+func CallRuleByName(name string) ParserFunc {
+	return func(state *State) (Ast, bool) {
+		var rule Rule
+		for _, r := range state.rules {
+			if r.name == name {
+				rule = r
+				break
+			}
+		}
+		return rule.parser(state)
+	}
 }
