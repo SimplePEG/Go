@@ -18,10 +18,10 @@ type Rule struct {
 }
 
 type State struct {
-	lastExpectations []Expectation
-	text             string
-	position         int
-	rules            []Rule
+	LastExpectations []Expectation
+	Text             string
+	Position         int
+	Rules            []Rule
 }
 
 type Ast struct {
@@ -35,13 +35,13 @@ type Ast struct {
 
 type ParserFunc = func(state *State) (Ast, bool)
 
-func GetLastError(state *State) interface{} {
-	if len(state.lastExpectations) < 1 {
-		return false
+func GetLastError(state *State) (string, bool) {
+	if len(state.LastExpectations) < 1 {
+		return "", true
 	}
 
-	var last_exp_position int = state.position
-	for _, v := range state.lastExpectations {
+	var last_exp_position int = state.Position
+	for _, v := range state.LastExpectations {
 		last_exp_position = max(last_exp_position, v.position)
 	}
 
@@ -49,9 +49,9 @@ func GetLastError(state *State) interface{} {
 	var lastExps []Expectation
 
 	// filter last exps
-	for i := 0; i < len(state.lastExpectations); i++ {
-		if state.lastExpectations[i].position == last_exp_position {
-			lastExps = append(lastExps, state.lastExpectations[i])
+	for i := 0; i < len(state.LastExpectations); i++ {
+		if state.LastExpectations[i].position == last_exp_position {
+			lastExps = append(lastExps, state.LastExpectations[i])
 		}
 	}
 	// get dedupedExpectations
@@ -75,7 +75,7 @@ func GetLastError(state *State) interface{} {
 	var error_line_number int
 	var position_of_error = 0
 
-	lines := strings.Split(state.text, "\n")
+	lines := strings.Split(state.Text, "\n")
 
 	for i := 0; i < len(lines); i++ {
 		line_lenght := len(lines[i]) + 1
@@ -95,8 +95,8 @@ func GetLastError(state *State) interface{} {
 	var error_ln_length = len(str_error_ln)
 	var unexpected_char = "EOF"
 
-	if last_exp_position < len(state.text) {
-		unexpected_char = string(state.text[last_exp_position])
+	if last_exp_position < len(state.Text) {
+		unexpected_char = string(state.Text[last_exp_position])
 	}
 
 	var unexpected = "Unexpected '" + unexpected_char + "'"
@@ -117,7 +117,7 @@ func GetLastError(state *State) interface{} {
 	pointer += "^"
 
 	var extra = line_of_error + "\n" + pointer
-	return unexpected + expected + "\n" + str_error_ln + ": " + extra
+	return unexpected + expected + "\n" + str_error_ln + ": " + extra, false
 
 }
 
@@ -131,10 +131,10 @@ func max(a, b int) int {
 func String(rule string) ParserFunc {
 	return func(state *State) (Ast, bool) {
 
-		if state.text[state.position:state.position+len(rule)] == rule {
-			start := state.position
-			state.position += len(rule)
-			end := state.position
+		if state.Text[state.Position:state.Position+len(rule)] == rule {
+			start := state.Position
+			state.Position += len(rule)
+			end := state.Position
 
 			return Ast{
 				typeData:       "string",
@@ -144,11 +144,11 @@ func String(rule string) ParserFunc {
 			}, false
 		}
 
-		state.lastExpectations = []Expectation{
+		state.LastExpectations = []Expectation{
 			Expectation{
 				typeData: "string",
 				rule:     rule,
-				position: state.position,
+				position: state.Position,
 			}}
 		return Ast{}, true // return err
 	}
@@ -156,16 +156,16 @@ func String(rule string) ParserFunc {
 
 func RegexChar(rule string) ParserFunc {
 	return func(state *State) (Ast, bool) {
-		text := state.text[state.position:]
+		text := state.Text[state.Position:]
 		isMatch, _ := regexp.MatchString(rule, text)
 
 		if isMatch {
 			r, _ := regexp.Compile(rule)
 			match := r.FindString(text)
 
-			start := state.position
-			state.position += len(match)
-			end := state.position
+			start := state.Position
+			state.Position += len(match)
+			end := state.Position
 
 			return Ast{
 				typeData:       "regex_char",
@@ -175,11 +175,11 @@ func RegexChar(rule string) ParserFunc {
 			}, false
 		}
 
-		state.lastExpectations = []Expectation{
+		state.LastExpectations = []Expectation{
 			Expectation{
 				typeData: "regex_char",
 				rule:     rule,
-				position: state.position,
+				position: state.Position,
 			}}
 
 		return Ast{}, true // return err
@@ -190,20 +190,20 @@ func Sequence(parsers []ParserFunc) ParserFunc {
 	return func(state *State) (Ast, bool) {
 		var asts []Ast // Ast
 		var expectations []Expectation
-		var startPosition = state.position
+		var startPosition = state.Position
 
 		for i := 0; i < len(parsers); i++ {
 			var ast, err = parsers[i](state)
-			expectations = append(expectations, state.lastExpectations...)
+			expectations = append(expectations, state.LastExpectations...)
 
 			if !err {
 				asts = append(asts, ast)
 			} else {
-				state.lastExpectations = expectations
+				state.LastExpectations = expectations
 				return Ast{}, true
 			}
 		}
-		state.lastExpectations = expectations
+		state.LastExpectations = expectations
 
 		var match = ""
 
@@ -216,7 +216,7 @@ func Sequence(parsers []ParserFunc) ParserFunc {
 			match:          match,
 			children:       asts,
 			start_position: startPosition,
-			end_position:   state.position,
+			end_position:   state.Position,
 		}, false
 
 	}
@@ -226,8 +226,8 @@ func OrderedChoice(parsers []ParserFunc) ParserFunc {
 	return func(state *State) (Ast, bool) {
 		var expectations []Expectation
 		var initialState = State{
-			text:     state.text,
-			position: state.position,
+			Text:     state.Text,
+			Position: state.Position,
 		}
 
 		for i := 0; i < len(parsers); i++ {
@@ -238,16 +238,16 @@ func OrderedChoice(parsers []ParserFunc) ParserFunc {
 					typeData:       "ordered_choice",
 					match:          ast.match,
 					children:       []Ast{ast},
-					start_position: initialState.position,
-					end_position:   state.position,
+					start_position: initialState.Position,
+					end_position:   state.Position,
 				}, false
 			}
-			state.text = initialState.text
-			state.position = initialState.position
-			expectations = append(expectations, state.lastExpectations...)
+			state.Text = initialState.Text
+			state.Position = initialState.Position
+			expectations = append(expectations, state.LastExpectations...)
 		}
 
-		state.lastExpectations = expectations
+		state.LastExpectations = expectations
 		return Ast{}, true
 	}
 }
@@ -256,17 +256,17 @@ func ZeroOrMore(parser ParserFunc) ParserFunc {
 	return func(state *State) (Ast, bool) {
 		var hasAst = true
 		var asts = []Ast{}
-		var start_position = state.position
+		var start_position = state.Position
 
 		for hasAst {
-			var state_position = state.position
+			var state_position = state.Position
 			ast, err := parser(state)
 			hasAst = !err
 
 			if !err {
 				asts = append(asts, ast)
 			} else {
-				state.position = state_position
+				state.Position = state_position
 			}
 		}
 
@@ -281,7 +281,7 @@ func ZeroOrMore(parser ParserFunc) ParserFunc {
 			match:          match,
 			children:       asts,
 			start_position: start_position,
-			end_position:   state.position,
+			end_position:   state.Position,
 		}, false
 	}
 }
@@ -290,17 +290,17 @@ func OneOrMore(parser ParserFunc) ParserFunc {
 	return func(state *State) (Ast, bool) {
 		var hasAst = true
 		var asts = []Ast{}
-		var start_position = state.position
+		var start_position = state.Position
 
 		for hasAst {
-			var state_position = state.position
+			var state_position = state.Position
 			ast, err := parser(state)
 			hasAst = !err
 
 			if !err {
 				asts = append(asts, ast)
 			} else {
-				state.position = state_position
+				state.Position = state_position
 			}
 		}
 
@@ -317,7 +317,7 @@ func OneOrMore(parser ParserFunc) ParserFunc {
 				match:          match,
 				children:       asts,
 				start_position: start_position,
-				end_position:   state.position,
+				end_position:   state.Position,
 			}, false
 		}
 
@@ -327,14 +327,14 @@ func OneOrMore(parser ParserFunc) ParserFunc {
 
 func Optional(parser ParserFunc) ParserFunc {
 	return func(state *State) (Ast, bool) {
-		var start_position = state.position
+		var start_position = state.Position
 		var ast, err = parser(state)
 		var asts = []Ast{}
 
 		if !err {
 			asts = append(asts, ast)
 		} else {
-			state.position = start_position
+			state.Position = start_position
 		}
 
 		var match string
@@ -348,7 +348,7 @@ func Optional(parser ParserFunc) ParserFunc {
 			match:          match,
 			children:       asts,
 			start_position: start_position,
-			end_position:   state.position,
+			end_position:   state.Position,
 		}, false
 	}
 }
@@ -356,21 +356,21 @@ func Optional(parser ParserFunc) ParserFunc {
 func AndPredicate(parser ParserFunc) ParserFunc {
 	return func(state *State) (Ast, bool) {
 		var currentState = State{
-			text:     state.text,
-			position: state.position,
+			Text:     state.Text,
+			Position: state.Position,
 		}
 
 		ast, err := parser(state)
 
 		if !err {
-			state.text = currentState.text
-			state.position = currentState.position
+			state.Text = currentState.Text
+			state.Position = currentState.Position
 
 			return Ast{
 				typeData:       "and_predicate",
 				children:       []Ast{ast},
-				start_position: state.position,
-				end_position:   state.position,
+				start_position: state.Position,
+				end_position:   state.Position,
 			}, false
 		}
 
@@ -381,52 +381,52 @@ func AndPredicate(parser ParserFunc) ParserFunc {
 func NotPredicate(parser ParserFunc) ParserFunc {
 	return func(state *State) (Ast, bool) {
 		var currentState = State{
-			text:     state.text,
-			position: state.position,
+			Text:     state.Text,
+			Position: state.Position,
 		}
 
 		ast, err := parser(state)
 
 		if !err {
-			state.text = currentState.text
-			state.position = currentState.position
-			state.lastExpectations = []Expectation{
+			state.Text = currentState.Text
+			state.Position = currentState.Position
+			state.LastExpectations = []Expectation{
 				Expectation{
 					typeData: "not_predicate",
 					children: []Ast{ast},
-					position: state.position,
+					position: state.Position,
 				}}
 
 			return Ast{}, true
 		}
 
-		state.lastExpectations = []Expectation{}
+		state.LastExpectations = []Expectation{}
 
 		return Ast{
 			typeData:       "not_predicate",
 			children:       []Ast{},
-			start_position: state.position,
-			end_position:   state.position,
+			start_position: state.Position,
+			end_position:   state.Position,
 		}, true
 	}
 }
 
 func EndOfFile() ParserFunc {
 	return func(state *State) (Ast, bool) {
-		if len(state.text) == state.position {
-			state.lastExpectations = []Expectation{}
+		if len(state.Text) == state.Position {
+			state.LastExpectations = []Expectation{}
 			return Ast{
 				typeData:       "end_of_file",
 				children:       []Ast{},
-				start_position: state.position,
-				end_position:   state.position,
+				start_position: state.Position,
+				end_position:   state.Position,
 			}, false
 		}
-		state.lastExpectations = []Expectation{
+		state.LastExpectations = []Expectation{
 			Expectation{
 				typeData: "end_of_file",
 				rule:     "EOF",
-				position: state.position,
+				position: state.Position,
 			},
 		}
 
@@ -456,7 +456,7 @@ func Action(name string, parser ParserFunc) ParserFunc {
 func CallRuleByName(name string) ParserFunc {
 	return func(state *State) (Ast, bool) {
 		var rule Rule
-		for _, r := range state.rules {
+		for _, r := range state.Rules {
 			if r.name == name {
 				rule = r
 				break

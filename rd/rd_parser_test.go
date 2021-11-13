@@ -19,8 +19,8 @@ func TestSequence(t *testing.T) {
 	})
 
 	var ast, err = parser(&State{
-		text:     text,
-		position: startPosition,
+		Text:     text,
+		Position: startPosition,
 	})
 
 	if err {
@@ -127,8 +127,8 @@ func TestSimpleMath(t *testing.T) {
 	}
 	var parser = math()
 	var ast, err = parser(&State{
-		text:     text,
-		position: startPosition,
+		Text:     text,
+		Position: startPosition,
 	})
 
 	if err == true {
@@ -140,14 +140,14 @@ func TestSimpleMath(t *testing.T) {
 	}
 }
 
-// should fail and return to position if ordered_choice failed
+// should fail and return to Position if ordered_choice failed
 func TestOrderedChoiseFailed(t *testing.T) {
 	// arrange
 	var text = "AB"
 	var startPosition = 0
 	var state = &State{
-		text:     text,
-		position: startPosition,
+		Text:     text,
+		Position: startPosition,
 	}
 	// act
 	var parser = OrderedChoice([]ParserFunc{
@@ -160,8 +160,8 @@ func TestOrderedChoiseFailed(t *testing.T) {
 
 	var _, err = parser(state)
 
-	if err == false || state.position != 0 {
-		t.Error("should fail and return to position if ordered_choice failed")
+	if err == false || state.Position != 0 {
+		t.Error("should fail and return to Position if ordered_choice failed")
 	}
 }
 
@@ -192,8 +192,8 @@ func TestComboRegexCharSequence(t *testing.T) {
 		RegexChar("[A-Z]"),
 	})
 	var ast, _ = parser(&State{
-		text:     text,
-		position: startPosition,
+		Text:     text,
+		Position: startPosition,
 	})
 
 	mockAst := Ast{

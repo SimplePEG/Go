@@ -15,8 +15,8 @@ func TestString(t *testing.T) {
 	// act
 	var parser = String(rule)
 	var state = &State{
-		text:     text,
-		position: start_position,
+		Text:     text,
+		Position: start_position,
 	}
 	var ast, err = parser(state)
 
@@ -25,7 +25,7 @@ func TestString(t *testing.T) {
 	}
 
 	// we need to assert without children
-	if len(state.lastExpectations) != 0 {
+	if len(state.LastExpectations) != 0 {
 		t.Error("Not parsed")
 	}
 
@@ -41,7 +41,7 @@ func TestString(t *testing.T) {
 	}
 }
 
-// should correctly handle wrong text for "string" method
+// should correctly handle wrong Text for "string" method
 func TestStringCorrect(t *testing.T) {
 	// arrange
 	var text = "asda"
@@ -51,8 +51,8 @@ func TestStringCorrect(t *testing.T) {
 	// act
 	var parser = String(rule)
 	var state = &State{
-		text:     text,
-		position: start_position,
+		Text:     text,
+		Position: start_position,
 	}
 	var _, err = parser(state)
 
@@ -68,7 +68,7 @@ func TestStringCorrect(t *testing.T) {
 		},
 	}
 
-	if reflect.DeepEqual(state.lastExpectations, mock) == false {
+	if reflect.DeepEqual(state.LastExpectations, mock) == false {
 		t.Error("asts is not equals")
 	}
 }
@@ -83,8 +83,8 @@ func TestRegexChar(t *testing.T) {
 	// act
 	var parser = RegexChar(rule)
 	var state = &State{
-		text:     text,
-		position: startPosition,
+		Text:     text,
+		Position: startPosition,
 	}
 	var ast, err = parser(state)
 
