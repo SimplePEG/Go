@@ -20,7 +20,10 @@ func TestHello(t *testing.T) {
 	var ast, err = spegParser.Parse(grammarText)
 
 	if !err {
-		println(123)
+		println(len(ast.Children))
+		//ast.Visit()
+		speg.SPEGActionVisit(ast)
+
 		println(ast.EndPosition)
 	} else {
 		println("Err")

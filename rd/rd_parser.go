@@ -36,19 +36,22 @@ type Ast struct {
 	Rule          string
 }
 
-func (node *Ast) Visit() *Ast {
-	if len(node.Children) > 0 {
-		for i := 0; i < len(node.Children); i++ {
-			return node.Children[i].Visit()
-		}
-	}
-
-	if node.Action != "" {
-		println(node.Action)
-	}
-
-	return node
-}
+//type Visitor interface {
+//	visitAction(node *Ast) *Ast
+//}
+//
+//func (node *Ast) Visit(v Visitor) *Ast {
+//	for i := 0; i < len(node.Children); i++ {
+//		ast := node.Children[i].Visit(v)
+//		node.Children[i] = *ast
+//	}
+//
+//	if node.Action != "" {
+//		return v.visitAction(node)
+//	}
+//
+//	return node
+//}
 
 type ParserFunc = func(state *State) (Ast, bool)
 
