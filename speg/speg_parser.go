@@ -236,7 +236,7 @@ func (sp SPEGParser) Parse(text string) (rd.Ast, bool) {
 		Position: 0,
 	}
 
-	sp.state = *state
+	//sp.state = state
 
 	return sp.parser(state)
 }

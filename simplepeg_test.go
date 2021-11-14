@@ -19,8 +19,6 @@ func TestHello(t *testing.T) {
 
 	var ast, err = spegParser.Parse(grammarText)
 
-	//var ast, err = rd.RegexChar("[\\s]")(&rd.State{Text: "1  ", Position: 0})
-
 	if !err {
 		println(123)
 		println(ast.EndPosition)

@@ -116,7 +116,7 @@ func TestRegexCharString(t *testing.T) {
 		t.Error("Not parsed")
 	}
 
-	println(ast.Match)
+	println(state.Position)
 
 	if ast.Match != stringToMatch || ast.TypeData != "regex_char" || ast.StartPosition != startPosition || ast.EndPosition != len(stringToMatch) {
 		t.Error("Not parsed implement")
@@ -222,6 +222,69 @@ func TestSequenceRegexString(t *testing.T) {
 		StartPosition: start_position,
 		EndPosition:   end_position,
 		TypeData:      "sequence",
+	}
+
+	if reflect.DeepEqual(ast, mock) == false {
+		t.Error("asts is not equals")
+	}
+}
+
+// should implement "zero_or_more" method for string
+func TestZeroOrMore(t *testing.T) {
+	// arrange
+	var text = "22"
+	var stringToMatch = "22"
+	var children_to_match = []Ast{
+		{
+			Match:         "2",
+			StartPosition: 0,
+			EndPosition:   1,
+			TypeData:      "regex_char",
+		},
+		{
+			Match:         "2",
+			StartPosition: 1,
+			EndPosition:   2,
+			TypeData:      "regex_char",
+		},
+	}
+
+	var parsing_expression = RegexChar("[0-9]")
+
+	var start_position = 0
+	var end_position = len(text)
+
+	var parser = ZeroOrMore(parsing_expression)
+
+	var state = State{
+		Text:     text,
+		Position: start_position,
+	}
+
+	var ast, err = parser(&state)
+
+	if err == true {
+		t.Error("Should be parse")
+	}
+
+	var mockLastE = []Expectation{
+		{
+			Position: 2,
+			Rule:     "[0-9]",
+			TypeData: "regex_char",
+		},
+	}
+
+	if reflect.DeepEqual(state.LastExpectations, mockLastE) == false {
+		t.Error("LastExpectations, should bu empty")
+	}
+
+	var mock = Ast{
+		Match:         stringToMatch,
+		Children:      children_to_match,
+		StartPosition: start_position,
+		EndPosition:   end_position,
+		TypeData:      "zero_or_more",
 	}
 
 	if reflect.DeepEqual(ast, mock) == false {

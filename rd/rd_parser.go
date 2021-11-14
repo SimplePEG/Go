@@ -37,7 +37,6 @@ type Ast struct {
 }
 
 func (node *Ast) Visit() *Ast {
-	println(123)
 	if len(node.Children) > 0 {
 		for i := 0; i < len(node.Children); i++ {
 			return node.Children[i].Visit()
@@ -148,8 +147,12 @@ func max(a, b int) int {
 
 func String(rule string) ParserFunc {
 	return func(state *State) (Ast, bool) {
+		var textRule string
+		if len(state.Text) >= state.Position+len(rule) {
+			textRule = state.Text[state.Position : state.Position+len(rule)]
+		}
 
-		if state.Text[state.Position:state.Position+len(rule)] == rule {
+		if textRule == rule {
 			start := state.Position
 			state.Position += len(rule)
 			end := state.Position
@@ -272,19 +275,20 @@ func OrderedChoice(parsers []ParserFunc) ParserFunc {
 
 func ZeroOrMore(parser ParserFunc) ParserFunc {
 	return func(state *State) (Ast, bool) {
-		var hasAst = true
+		//var hasAst = true
 		var asts = []Ast{}
 		var start_position = state.Position
 
-		for hasAst {
+		for {
 			var state_position = state.Position
+
 			ast, err := parser(state)
-			hasAst = !err
 
 			if !err {
 				asts = append(asts, ast)
 			} else {
 				state.Position = state_position
+				break
 			}
 		}
 
@@ -339,7 +343,7 @@ func OneOrMore(parser ParserFunc) ParserFunc {
 			}, false
 		}
 
-		return Ast{}, false
+		return Ast{}, true
 	}
 }
 
@@ -467,7 +471,7 @@ func Action(name string, parser ParserFunc) ParserFunc {
 			ast.Action = name
 		}
 
-		return ast, false
+		return ast, err
 	}
 }
 
