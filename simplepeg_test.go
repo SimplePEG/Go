@@ -1,6 +1,7 @@
 package simplepeg
 
 import (
+	"github.com/SimplePEG/Go/rd"
 	"github.com/SimplePEG/Go/speg"
 	"testing"
 )
@@ -22,9 +23,15 @@ func TestHello(t *testing.T) {
 	if !err {
 		println(len(ast.Children))
 		//ast.Visit()
-		speg.SPEGActionVisit(ast)
+		_, child := speg.ActionVisit(&ast)
+		parser := child.Parsers[0]
 
-		println(ast.EndPosition)
+		textAst, textErr := parser(&rd.State{
+			Text:     "1",
+			Position: 0,
+		})
+
+		println(textAst.Match, textErr)
 	} else {
 		println("Err")
 	}

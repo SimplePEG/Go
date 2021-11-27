@@ -142,7 +142,7 @@ func parsing_not_predicate() rd.ParserFunc {
 
 func parsingAndPredicate() rd.ParserFunc {
 	return rd.Action("parsing_and_predicate", rd.Sequence([]rd.ParserFunc{
-		rd.String("!"),
+		rd.String("&"),
 		rd.OrderedChoice([]rd.ParserFunc{
 			parsingGroup(),
 			parsingAtomicExpression(),
