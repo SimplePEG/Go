@@ -19,42 +19,42 @@ func TestSequence(t *testing.T) {
 	})
 
 	var ast, err = parser(&State{
-		text:     text,
-		position: startPosition,
+		Text:     text,
+		Position: startPosition,
 	})
 
 	if err {
 		t.Error("Sequence not parsed")
 	}
 
-	if ast.match != stringToMatch {
-		t.Error("Expected ", stringToMatch, " but val is ", ast.match)
+	if ast.Match != stringToMatch {
+		t.Error("Expected ", stringToMatch, " but val is ", ast.Match)
 	}
 
-	if ast.start_position != startPosition {
-		t.Error("Expected ", startPosition, " but val is ", ast.start_position)
+	if ast.StartPosition != startPosition {
+		t.Error("Expected ", startPosition, " but val is ", ast.StartPosition)
 	}
 
-	if ast.end_position != len(stringToMatch) {
-		t.Error("Expected ", len(stringToMatch), " but val is ", ast.end_position)
+	if ast.EndPosition != len(stringToMatch) {
+		t.Error("Expected ", len(stringToMatch), " but val is ", ast.EndPosition)
 	}
 
 	var childrenToMath = []Ast{
 		{
-			typeData:       "string",
-			match:          "test",
-			start_position: 0,
-			end_position:   4,
+			TypeData:      "string",
+			Match:         "test",
+			StartPosition: 0,
+			EndPosition:   4,
 		},
 		{
-			typeData:       "string",
-			match:          "something",
-			start_position: 4,
-			end_position:   13,
+			TypeData:      "string",
+			Match:         "something",
+			StartPosition: 4,
+			EndPosition:   13,
 		},
 	}
 
-	if reflect.DeepEqual(ast.children, childrenToMath) == false {
+	if reflect.DeepEqual(ast.Children, childrenToMath) == false {
 		t.Error("Children asts is not equals")
 	}
 }
@@ -127,27 +127,27 @@ func TestSimpleMath(t *testing.T) {
 	}
 	var parser = math()
 	var ast, err = parser(&State{
-		text:     text,
-		position: startPosition,
+		Text:     text,
+		Position: startPosition,
 	})
 
 	if err == true {
 		t.Error("should successfully parse simple math expression")
 	}
 
-	if ast.match != stringToMatch {
+	if ast.Match != stringToMatch {
 		t.Error("should successfully parse simple math expression")
 	}
 }
 
-// should fail and return to position if ordered_choice failed
+// should fail and return to Position if ordered_choice failed
 func TestOrderedChoiseFailed(t *testing.T) {
 	// arrange
 	var text = "AB"
 	var startPosition = 0
 	var state = &State{
-		text:     text,
-		position: startPosition,
+		Text:     text,
+		Position: startPosition,
 	}
 	// act
 	var parser = OrderedChoice([]ParserFunc{
@@ -160,8 +160,8 @@ func TestOrderedChoiseFailed(t *testing.T) {
 
 	var _, err = parser(state)
 
-	if err == false || state.position != 0 {
-		t.Error("should fail and return to position if ordered_choice failed")
+	if err == false || state.Position != 0 {
+		t.Error("should fail and return to Position if ordered_choice failed")
 	}
 }
 
@@ -173,16 +173,16 @@ func TestComboRegexCharSequence(t *testing.T) {
 	var startPosition = 0
 	var childrenToMatch = []Ast{
 		{
-			end_position:   1,
-			match:          "1",
-			start_position: 0,
-			typeData:       "regex_char",
+			EndPosition:   1,
+			Match:         "1",
+			StartPosition: 0,
+			TypeData:      "regex_char",
 		},
 		{
-			end_position:   2,
-			match:          "D",
-			start_position: 1,
-			typeData:       "regex_char",
+			EndPosition:   2,
+			Match:         "D",
+			StartPosition: 1,
+			TypeData:      "regex_char",
 		},
 	}
 
@@ -192,16 +192,16 @@ func TestComboRegexCharSequence(t *testing.T) {
 		RegexChar("[A-Z]"),
 	})
 	var ast, _ = parser(&State{
-		text:     text,
-		position: startPosition,
+		Text:     text,
+		Position: startPosition,
 	})
 
 	mockAst := Ast{
-		match:          stringToMatch,
-		children:       childrenToMatch,
-		start_position: startPosition,
-		end_position:   len(stringToMatch),
-		typeData:       "sequence",
+		Match:         stringToMatch,
+		Children:      childrenToMatch,
+		StartPosition: startPosition,
+		EndPosition:   len(stringToMatch),
+		TypeData:      "sequence",
 	}
 
 	if reflect.DeepEqual(ast, mockAst) == false {
