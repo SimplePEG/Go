@@ -15,23 +15,6 @@ type NodeVisit struct {
 	Children []NodeVisit
 }
 
-// Global
-var GRules GrammarRules
-
-func ParseText(ast rd.Ast, text string) (rd.Ast, bool) {
-	_, child := actionVisit(&NodeVisit{Node: &ast})
-
-	parser := child.Parsers[3]
-
-	result, err := parser(&rd.State{
-		Text:     text,
-		Position: 0,
-		Rules:    GRules.rules,
-	})
-
-	return result, err
-}
-
 func actionVisit(visitNode *NodeVisit) (rd.ParserFunc, *NodeVisit) {
 	if len(visitNode.Node.Children) > 0 {
 		for i := 0; i < len(visitNode.Node.Children); i++ {

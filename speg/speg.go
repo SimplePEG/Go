@@ -13,3 +13,27 @@ func Parse(grammar string, text string) (rd.Ast, bool) {
 
 	return rd.Ast{}, gErr
 }
+
+// GRules as global variable to
+var GRules GrammarRules
+
+func ParseText(ast rd.Ast, text string) (rd.Ast, bool) {
+	parser, grule := GetParser(ast)
+
+	result, err := parser(&rd.State{
+		Text:     text,
+		Position: 0,
+		Rules:    grule.rules,
+	})
+
+	return result, err
+}
+
+func GetParser(ast rd.Ast) (rd.ParserFunc, GrammarRules) {
+	GRules = GrammarRules{}
+	_, visitNode := actionVisit(&NodeVisit{Node: &ast})
+
+	parser := visitNode.Parsers[3]
+
+	return parser, GRules
+}
