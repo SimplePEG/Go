@@ -176,7 +176,7 @@ func visitParsingSequence(node *NodeVisit) rd.ParserFunc {
 
 //
 func visitParsingOrderedChoice(node *NodeVisit) rd.ParserFunc {
-	var head = []rd.ParserFunc{node.Children[0].Parsers[0]}
+	var head = []rd.ParserFunc{node.Parsers[0]}
 
 	for i := 0; i < len(node.Children[1].Children); i++ {
 		head = append(head, node.Children[1].Children[i].Parsers[3])
