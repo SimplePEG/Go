@@ -230,7 +230,7 @@ func NewSPEGParser() SPEGParser {
 	return speg
 }
 
-func (sp SPEGParser) Parse(text string) (rd.Ast, bool) {
+func (sp SPEGParser) ParseGrammar(text string) (rd.Ast, bool) {
 	state := &rd.State{
 		Text:     text,
 		Position: 0,

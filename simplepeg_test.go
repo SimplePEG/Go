@@ -5,13 +5,7 @@ import (
 	"testing"
 )
 
-func TestHello(t *testing.T) {
-	v := Hello()
-
-	if v != "World" {
-		t.Error("Expected World, got", v)
-	}
-
+func TestParse(t *testing.T) {
 	var grammarText = `GRAMMAR url
 
 url       ->  scheme "://" host pathname search hash?;
@@ -26,7 +20,7 @@ hash      ->  "#" [^ ]*;
   `
 	var spegParser = speg.NewSPEGParser()
 
-	var ast, err = spegParser.Parse(grammarText)
+	var ast, err = spegParser.ParseGrammar(grammarText)
 
 	if ast.Match != grammarText {
 		t.Error("Grammar not matched to original")
