@@ -487,6 +487,7 @@ func CallRuleByName(name string) ParserFunc {
 				break
 			}
 		}
+
 		return rule.Parser(state)
 	}
 }

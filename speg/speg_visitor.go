@@ -2,6 +2,7 @@ package speg
 
 import (
 	"github.com/SimplePEG/Go/rd"
+	"strings"
 )
 
 type GrammarRules struct {
@@ -262,11 +263,11 @@ func visitParsingOptional(node *NodeVisit) (rd.ParserFunc, NodeVisit) {
 
 //parsing_string
 func visitParsingString(node *NodeVisit) (rd.ParserFunc, NodeVisit) {
-	// TODO match
-	//node.children[1].match
-	//.replace(/\\\\/g, '\\')
-	//.replace(/\\"/g, '"')
-	return rd.String(node.Node.Children[1].Match), *node
+	text := node.Node.Children[1].Match
+	text = strings.ReplaceAll(text, "\\\\\\\\", "\\\\")
+	text = strings.ReplaceAll(text, "\\\"", "\"")
+
+	return rd.String(text), *node
 }
 
 //parsing_regex_char

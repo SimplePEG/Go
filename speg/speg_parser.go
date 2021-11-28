@@ -106,7 +106,7 @@ func parsingSubExpression() rd.ParserFunc {
 
 func tag() rd.ParserFunc {
 	return rd.Action("noop", rd.Sequence([]rd.ParserFunc{
-		rd.RegexChar("[a-zA-Z_]'"),
+		rd.RegexChar("[a-zA-Z_]"),
 		rd.ZeroOrMore(rd.RegexChar("[a-zA-Z0-9_]")),
 	}))
 }
@@ -204,7 +204,7 @@ func parsingRegexChar() rd.ParserFunc {
 			rd.OneOrMore(rd.OrderedChoice([]rd.ParserFunc{
 				rd.String("\\]"),
 				rd.String("\\["),
-				rd.RegexChar("[^//]]"),
+				rd.RegexChar("[^\\]]"),
 			})),
 			rd.String("]"),
 		}),
