@@ -23,7 +23,7 @@ func ParseText(ast rd.Ast, text string) (rd.Ast, bool) {
 	parser := child.Parsers[3]
 
 	result, err := parser(&rd.State{
-		Text:     "https",
+		Text:     text,
 		Position: 0,
 		Rules:    GRules.rules,
 	})
