@@ -1,7 +1,6 @@
 package simplepeg
 
 import (
-	"github.com/SimplePEG/Go/rd"
 	"github.com/SimplePEG/Go/speg"
 	"testing"
 )
@@ -14,24 +13,21 @@ func TestHello(t *testing.T) {
 	}
 
 	var grammarText = `GRAMMAR url
-	
-	url ->  "1";`
+
+url       ->  scheme host;
+scheme    ->  "http";
+host      ->  "s";
+  `
 	var spegParser = speg.NewSPEGParser()
 
 	var ast, err = spegParser.Parse(grammarText)
 
 	if !err {
-		println(len(ast.Children))
-		//ast.Visit()
-		_, child := speg.ActionVisit(&ast)
-		parser := child.Parsers[0]
 
-		textAst, textErr := parser(&rd.State{
-			Text:     "1",
-			Position: 0,
-		})
+		textAst, textErr := speg.ParseText(ast, "https")
 
 		println(textAst.Match, textErr)
+
 	} else {
 		println("Err")
 	}
