@@ -134,23 +134,23 @@ func visitParsingRule(node *NodeVisit) rd.ParserFunc {
 	var ruleName = node.Node.Children[0].Match
 
 	var parser = func(state *rd.State) (rd.Ast, bool) {
-		var start = state.Position
+		//var start = state.Position
 		var ast, err = rule(state)
 
-		if !err {
-			ast.Rule = ruleName
-			state.SuccesfullRules = append(state.SuccesfullRules, rd.Ast{
-				Rule:          ast.Rule,
-				Match:         ast.Match,
-				StartPosition: ast.StartPosition,
-				EndPosition:   ast.EndPosition,
-			})
-		} else {
-			state.FailedRules = append(state.FailedRules, rd.Ast{
-				Rule:          ruleName,
-				StartPosition: start,
-			})
-		}
+		//if !err {
+		//	ast.Rule = ruleName
+		//	state.SuccesfullRules = append(state.SuccesfullRules, rd.Ast{
+		//		Rule:          ast.Rule,
+		//		Match:         ast.Match,
+		//		StartPosition: ast.StartPosition,
+		//		EndPosition:   ast.EndPosition,
+		//	})
+		//} else {
+		//	state.FailedRules = append(state.FailedRules, rd.Ast{
+		//		Rule:          ruleName,
+		//		StartPosition: start,
+		//	})
+		//}
 
 		return ast, err
 	}
