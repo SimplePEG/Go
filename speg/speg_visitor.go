@@ -6,7 +6,7 @@ import (
 )
 
 type GrammarRules struct {
-	rules []rd.Rule
+	Rules []rd.Rule
 }
 
 type NodeVisit struct {
@@ -155,7 +155,7 @@ func visitParsingRule(node *NodeVisit) rd.ParserFunc {
 		return ast, err
 	}
 
-	GRules.rules = append(GRules.rules, rd.Rule{Name: ruleName, Parser: parser})
+	GRules.Rules = append(GRules.Rules, rd.Rule{Name: ruleName, Parser: parser})
 
 	return parser
 }

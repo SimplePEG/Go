@@ -23,7 +23,7 @@ func ParseText(ast rd.Ast, text string) (rd.Ast, bool) {
 	result, err := parser(&rd.State{
 		Text:     text,
 		Position: 0,
-		Rules:    grule.rules,
+		Rules:    grule.Rules,
 	})
 
 	return result, err
