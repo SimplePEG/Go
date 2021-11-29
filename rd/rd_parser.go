@@ -178,10 +178,21 @@ func String(rule string) ParserFunc {
 	}
 }
 
+var regexMap = make(map[string]*regexp.Regexp)
+
+func getRegex(rule string) *regexp.Regexp {
+	if regexMap[rule] == nil {
+		r, _ := regexp.Compile(rule)
+		regexMap[rule] = r
+	}
+
+	return regexMap[rule]
+}
+
 func RegexChar(rule string) ParserFunc {
 	return func(state *State) (Ast, bool) {
 		text := state.Text[state.Position:]
-		r, _ := regexp.Compile(rule)
+		r := getRegex(rule)
 		loc := r.FindStringIndex(text)
 
 		if len(loc) > 0 && loc[0] == 0 {
