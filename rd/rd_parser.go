@@ -429,7 +429,6 @@ func NotPredicate(parser ParserFunc) ParserFunc {
 
 		return Ast{
 			TypeData:      "not_predicate",
-			Children:      []Ast{},
 			StartPosition: state.Position,
 			EndPosition:   state.Position,
 		}, true
@@ -442,7 +441,6 @@ func EndOfFile() ParserFunc {
 			state.LastExpectations = []Expectation{}
 			return Ast{
 				TypeData:      "end_of_file",
-				Children:      []Ast{},
 				StartPosition: state.Position,
 				EndPosition:   state.Position,
 			}, false
